@@ -72,3 +72,22 @@ RUN echo "export CMAKE_TOOLCHAIN_FILE=~/app/vcpkg/scripts/buildsystems/vcpkg.cma
 
 # export cmake env.
 RUN echo "export CMAKE_GENERATOR='Ninja'" >> ~/.bashrc
+
+# extra tool build to libraries.
+RUN apt install \
+    pkg-config \
+    -y
+
+# shell custom
+RUN curl -sS https://starship.rs/install.sh -o /tmp/install.sh && \
+    chmod +x /tmp/install.sh && \
+    /tmp/install.sh --yes && \
+    rm /tmp/install.sh
+RUN echo "eval \"\$(starship init bash)\"" >> ~/.bashrc
+
+# application custom
+
+# funny tools
+
+# run bash when start container by default with interactive mode
+ENTRYPOINT ["/bin/bash"]
