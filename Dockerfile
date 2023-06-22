@@ -4,8 +4,8 @@ FROM debian:latest
 # use sid for latest packages
 # RUN echo "deb http://deb.debian.org/debian sid main" > /etc/apt/sources.list
 # or use tsinghua mirror for faster download
+RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ sid main contrib non-free non-free-firmware" > /etc/apt/sources.list
 RUN apt update && apt install -y apt-transport-https ca-certificates
-RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ sid main contrib non-free non-free-firmware" > /etc/apt/sources.list
 # install packages
 RUN apt update && apt install -y \
     build-essential \
@@ -24,16 +24,28 @@ RUN apt install -y \
     lsb_release
 
 # install latest clang and clang tools
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
-    echo "deb http://apt.llvm.org/unstable/ llvm-toolchain main" >> /etc/apt/sources.list && \
-    apt update && apt install -y \
-    clang \
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+
+RUN    echo "deb http://apt.llvm.org/unstable/ llvm-toolchain main" >> /etc/apt/sources.list && \
+    apt update 
+
+# add proxy for apt
+
+RUN  echo 'Acquire::http::Proxy "http://172.17.0.1:10811/";' >> /etc/apt/apt.conf.d/proxy.conf
+RUN  echo 'Acquire::https::Proxy "http://172.17.0.1:10811/";' >> /etc/apt/apt.conf.d/proxy.conf
+
+
+RUN apt install -y \
     clang-tidy \
-    clang-format \
+    clang-format 
+
+RUN apt install -y \
     clangd \
     lldb
 
 
+RUN apt install -y \
+    clang 
 # install latest cmake (It's not the latest version)
 # TODO update it
 RUN apt install -y cmake
@@ -59,12 +71,19 @@ WORKDIR /root/app
 
 # install vcpkg from my script.
 RUN apt-get install curl zip unzip tar -y
+
+RUN echo "[http]" >> ~/.gitconfig
+RUN echo "\tproxy = 172.17.0.1:10811" >> ~/.gitconfig
+RUN echo "[https]" >> ~/.gitconfig
+RUN echo "\tproxy = 172.17.0.1:10811" >> ~/.gitconfig
+ENV  http_proxy="http://172.17.0.1:10811"        
+ENV  https_proxy="http://172.17.0.1:10811"        
+
 RUN  git clone https://github.com/Microsoft/vcpkg.git
 RUN ./vcpkg/bootstrap-vcpkg.sh
 RUN mkdir -p ~/bin && ln -s ~/app/vcpkg/vcpkg ~/bin/vcpkg
 
 # add vcpkg to PATH
-ENV PATH="/root/bin:${PATH}"
 
 # export vcpkg env.
 RUN echo "export EDITOR=vim" >> ~/.bashrc
@@ -84,6 +103,9 @@ RUN curl -sS https://starship.rs/install.sh -o /tmp/install.sh && \
     /tmp/install.sh --yes && \
     rm /tmp/install.sh
 RUN echo "eval \"\$(starship init bash)\"" >> ~/.bashrc
+
+# extra envs
+RUN echo 'export PATH="~/bin:${PATH}"' >> ~/.bashrc
 
 # application custom
 
